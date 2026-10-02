@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Viewport जोड़ा गया -->
+    <title>एडवांस्ड कलाकृति ड्रॉइंग टूल 🖌️</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6c757d;
+            --light-bg: #f8f9fa;
+            --white: #ffffff;
+            --border-color: #dee2e6;
+            --text-color: #333;
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0f7fa 0%, #d4e1ec 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-color);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+         h1 i {
+            font-size: 1.5em;
+         }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 900px; /* थोड़ा चौड़ा */
+        }
+
+        .canvas-container {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: var(--white); /* बैकग्राउंड रंग कैनवस के पीछे भी */
+            width: 100%;
+             /* Aspect ratio for canvas */
+             /* padding-top: 75%; 4:3 ratio (height/width * 100) */
+             /* Or set a fixed max-height */
+             max-height: 70vh;
+             display: flex; /* ताकि कैनवस कंटेनर में फिट हो */
+        }
+
+        canvas {
+            /* position: absolute; */
+            /* top: 0; */
+            /* left: 0; */
+            background: var(--white);
+            display: block;
+            /* width: 100%; हटा दिया, JS से नियंत्रित */
+            /* height: 100%; हटा दिया, JS से नियंत्रित */
+            cursor: crosshair;
+            touch-action: none; /* टच स्क्रॉलिंग रोकें */
+             max-width: 100%;
+             max-height: 100%;
+             object-fit: contain; /* कंटेनर में फिट करें */
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px;
+            background-color: var(--light-bg);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group label, .control-group .group-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        button, .tool-btn {
+            padding: 10px 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-align: center;
+        }
+
+        button:hover, .tool-btn:hover {
+            background: #3a5c8d;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+         button:active, .tool-btn:active {
+            transform: translateY(0);
+             box-shadow: none;
+         }
+
+        input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            padding: 0; /* पैडिंग हटाएं */
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: transparent; /* डिफ़ॉल्ट बैकग्राउंड हटाएं */
+             -webkit-appearance: none; /* Safari/Chrome डिफ़ॉल्ट स्टाइलिंग हटाएं */
+             -moz-appearance: none; /* Firefox डिफ़ॉल्ट स्टाइलिंग हटाएं */
+             appearance: none;
+             border: 1px solid var(--border-color);
+        }
+        /* कस्टम कलर पिकर स्टाइल */
+         input[type="color"]::-webkit-color-swatch-wrapper {
+             padding: 0;
+             border-radius: 5px;
+         }
+         input[type="color"]::-webkit-color-swatch {
+             border: none;
+             border-radius: 5px;
+         }
+         input[type="color"]::-moz-color-swatch {
+             border: none;
+             border-radius: 5px;
+         }
+
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .color-presets {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(25px, 1fr));
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .color-preset {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .color-preset:hover {
+            transform: scale(1.15);
+            border-color: var(--primary-color);
+        }
+
+        .tools-container, .patterns-container, .symmetry-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+            gap: 8px;
+        }
+
+        .tool-btn {
+            background: var(--light-bg);
+            color: var(--text-color);
+            padding: 8px; /* छोटे बटन */
+             font-size: 1rem; /* सिर्फ आइकन के लिए */
+             line-height: 1;
+             border: 1px solid var(--border-color);
+        }
+
+        .tool-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #fill-toggle { /* Fill टॉगल स्टाइल */
+            background: var(--light-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            width: auto; /* टेक्स्ट के अनुसार चौड़ाई */
+        }
+        #fill-toggle.active {
+             background: var(--primary-color);
+             color: white;
+             border-color: var(--primary-color);
+        }
+
+        /* Undo/Redo बटन स्टाइल */
+        #undoBtn, #redoBtn {
+             background-color: var(--secondary-color);
+        }
+         #undoBtn:hover, #redoBtn:hover {
+             background-color: #5a6268;
+         }
+         #undoBtn:disabled, #redoBtn:disabled {
+             opacity: 0.5;
+             cursor: not-allowed;
+             transform: none;
+             box-shadow: none;
+         }
+
+         /* Clear/Save बटन स्टाइल */
+         #clearBtn { background-color: #ffc107; color: var(--text-color);}
+         #clearBtn:hover { background-color: #e0a800;}
+         #saveBtn { background-color: #28a745;}
+         #saveBtn:hover { background-color: #218838;}
+
+         /* Responsive */
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+            h1 { font-size: 1.5rem; }
+            .canvas-container { max-height: 60vh; }
+        }
+         @media (max-width: 480px) {
+            .controls-grid {
+                grid-template-columns: 1fr 1fr; /* दो कॉलम */
+            }
+            h1 { font-size: 1.3rem; }
+            button, .tool-btn { font-size: 0.8rem; padding: 8px 10px; gap: 5px;}
+            .tools-container, .patterns-container, .symmetry-container {
+                grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            }
+            .color-presets {
+                grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+            }
+            .color-preset { width: 20px; height: 20px;}
+            input[type="color"] { width: 35px; height: 35px;}
+            .canvas-container { max-height: 50vh; }
+        }
+
+    </style>
+</head>
+<body>
+    <h1><i class="fas fa-palette"></i> एडवांस्ड ड्रॉइंग टूल</h1>
+
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="drawingCanvas"></canvas> <!-- ID बदला गया -->
+        </div>
+
+        <div class="controls-grid">
+             <!-- Properties -->
+             <div class="control-group">
+                <label for="colorPicker">रंग</label>
+                <input type="color" id="colorPicker" value="#4a6fa5" title="ब्रश का रंग चुनें">
+                <div class="color-presets">
+                    <div class="color-preset" style="background-color: #000000;" data-color="#000000" title="काला"></div>
+                    <div class="color-preset" style="background-color: #ffffff; border: 1px solid #ccc;" data-color="#ffffff" title="सफेद (इरेज़र के लिए)"></div>
+                    <div class="color-preset" style="background-color: #ff0000;" data-color="#ff0000" title="लाल"></div>
+                    <div class="color-preset" style="background-color: #00ff00;" data-color="#00ff00" title="हरा"></div>
+                    <div class="color-preset" style="background-color: #0000ff;" data-color="#0000ff" title="नीला"></div>
+                    <div class="color-preset" style="background-color: #ffff00;" data-color="#ffff00" title="पीला"></div>
+                    <div class="color-preset" style="background-color: #ff00ff;" data-color="#ff00ff" title="मैजेंटा"></div>
+                    <div class="color-preset" style="background-color: #00ffff;" data-color="#00ffff" title="सियान"></div>
+                    <div class="color-preset" style="background-color: #ffa500;" data-color="#ffa500" title="नारंगी"></div>
+                    <div class="color-preset" style="background-color: #800080;" data-color="#800080" title="बैंगनी"></div>
+                    <div class="color-preset" style="background-color: #a52a2a;" data-color="#a52a2a" title="भूरा"></div>
+                    <div class="color-preset" style="background-color: #808080;" data-color="#808080" title="ग्रे"></div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="sizeSlider">साइज़: <span id="sizeValue">5</span>px</label>
+                <input type="range" id="sizeSlider" min="1" max="100" value="5" title="ब्रश/टूल का आकार बदलें">
+            </div>
+
+            <div class="control-group">
+                <label for="opacitySlider">ओपेसिटी: <span id="opacityValue">100</span>%</label>
+                <input type="range" id="opacitySlider" min="1" max="100" value="100" title="ब्रश की ओपेसिटी बदलें">
+            </div>
+
+             <!-- Tools -->
+             <div class="control-group">
+                 <span class="group-title">टूल्स</span>
+                 <div class="tools-container">
+                     <button class="tool-btn active" data-tool="brush" title="ब्रश"><i class="fas fa-paint-brush"></i></button>
+                     <button class="tool-btn" data-tool="eraser" title="इरेज़र"><i class="fas fa-eraser"></i></button>
+                     <button class="tool-btn" data-tool="line" title="लाइन"><i class="fas fa-minus"></i></button> <!-- आइकन बदला -->
+                     <button class="tool-btn" data-tool="rect" title="रेक्टेंगल"><i class="far fa-square"></i></button>
+                     <button class="tool-btn" data-tool="circle" title="सर्कल"><i class="far fa-circle"></i></button>
+                 </div>
+                 <button id="fill-toggle" title="आकृतियों को भरें/खाली रखें"><i class="fas fa-fill-drip"></i> फिल: बंद</button>
+             </div>
+
+             <!-- Actions -->
+            <div class="control-group">
+                 <span class="group-title">एक्शन्स</span>
+                 <button id="undoBtn" title="पिछला स्टेप वापस लाएं (Ctrl+Z)"><i class="fas fa-undo"></i> Undo</button>
+                 <button id="redoBtn" title="अगला स्टेप वापस लाएं (Ctrl+Y)"><i class="fas fa-redo"></i> Redo</button>
+                 <button id="clearBtn" title="पूरा कैनवस साफ़ करें"><i class="fas fa-trash-alt"></i> क्लियर</button>
+                 <button id="saveBtn" title="इमेज सेव करें"><i class="fas fa-save"></i> सेव</button>
+             </div>
+
+            <!-- Patterns -->
+            <div class="control-group">
+                <span class="group-title">पैटर्न</span>
+                <div class="patterns-container">
+                     <button class="tool-btn active" data-pattern="none" title="नॉर्मल ब्रश"><i class="fas fa-pen"></i></button>
+                    <button class="tool-btn" data-pattern="rainbow" title="रेनबो ब्रश"><i class="fas fa-rainbow"></i></button>
+                    <button class="tool-btn" data-pattern="neon" title="नियॉन इफ़ेक्ट"><i class="fas fa-lightbulb"></i></button>
+                    <!-- मिरर और कैलिडोस्कोप को सिमेट्री में रखा -->
+                </div>
+            </div>
+
+            <!-- Symmetry -->
+            <div class="control-group">
+                <span class="group-title">सिमेट्री</span>
+                <div class="symmetry-container">
+                     <button class="tool-btn active" data-symmetry="none" title="कोई सिमेट्री नहीं"><i class="fas fa-ban"></i></button>
+                    <button class="tool-btn" data-symmetry="vertical" title="ऊर्ध्वाधर सिमेट्री"><i class="fas fa-grip-lines-vertical"></i></button>
+                    <button class="tool-btn" data-symmetry="horizontal" title="क्षैतिज सिमेट्री"><i class="fas fa-grip-lines"></i></button>
+                    <button class="tool-btn" data-symmetry="radial4" title="4-बिंदु रेडियल सिमेट्री"><i class="fas fa-asterisk"></i></button> <!-- 4 पॉइंट -->
+                    <button class="tool-btn" data-symmetry="radial6" title="6-बिंदु रेडियल सिमेट्री"><i class="fas fa-fan"></i></button> <!-- 6 पॉइंट -->
+                    <!-- Kaleidoscope could be a mode here too -->
+                     <button class="tool-btn" data-symmetry="kaleidoscope6" title="6-भाग कैलिडोस्कोप"><i class="fas fa-meteor"></i></button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true }); // willReadFrequently for getImageData performance
+        const colorPicker = document.getElementById('colorPicker');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const sizeValue = document.getElementById('sizeValue');
+        const opacitySlider = document.getElementById('opacitySlider');
+        const opacityValue = document.getElementById('opacityValue');
+        const clearBtn = document.getElementById('clearBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        const fillToggle = document.getElementById('fill-toggle');
+
+        // State variables
+        let isDrawing = false;
+        let currentTool = 'brush';
+        let currentPattern = 'none';
+        let currentSymmetry = 'none';
+        let brushSize = 5;
+        let brushColor = '#4a6fa5';
+        let brushOpacity = 1;
+        let isFilling = false;
+        let lastX = 0;
+        let lastY = 0;
+        let startX = 0;
+        let startY = 0;
+        let hue = 0; // For rainbow pattern
+        let snapshot; // For shape preview
+
+        // History for Undo/Redo
+        const history = [];
+        let historyIndex = -1;
+        const MAX_HISTORY = 20; // Limit history size
+
+        // --- Canvas Setup & Resizing ---
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const tempImageData = ctx.getImageData(0, 0, canvas.width, canvas.height); // Save current drawing
+
+            // Set internal canvas size based on container
+            canvas.width = container.clientWidth;
+             // Calculate height based on aspect ratio (e.g., 4:3) or use container height
+            // canvas.height = container.clientWidth * (3 / 4);
+             // Or use a max height relative to viewport
+             canvas.height = Math.min(container.clientHeight, window.innerHeight * 0.7, 600);
+
+
+            // Set display size (important for correct scaling)
+            canvas.style.width = `${canvas.width}px`;
+            canvas.style.height = `${canvas.height}px`;
+
+            // Restore previous drawing if canvas size changed
+             if (tempImageData) {
+                 // Temporarily set white background before putting image data back
+                 ctx.fillStyle = 'white';
+                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+                 // Create a temporary canvas to resize the image data
+                 const tempCanvas = document.createElement('canvas');
+                 const tempCtx = tempCanvas.getContext('2d');
+                 tempCanvas.width = tempImageData.width;
+                 tempCanvas.height = tempImageData.height;
+                 tempCtx.putImageData(tempImageData, 0, 0);
+                 // Draw the scaled image onto the main canvas
+                 ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+             } else {
+                 // If first time or cleared, just fill white
+                 ctx.fillStyle = 'white';
+                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+                 saveState(); // Save initial blank state
+             }
+
+            // Set default line properties (might be reset by resize)
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+
+        // --- Initialization ---
+        function initialize() {
+            resizeCanvas(); // Set initial size and clear
+            ctx.fillStyle = 'white'; // Ensure background is white
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveState(); // Save initial blank state
+            updateUndoRedoButtons();
+
+            // Add event listeners
+            setupEventListeners();
+        }
+
+        // --- Event Listeners ---
+        function setupEventListeners() {
+            // Input changes
+            colorPicker.addEventListener('input', (e) => brushColor = e.target.value);
+            sizeSlider.addEventListener('input', (e) => {
+                brushSize = parseInt(e.target.value);
+                sizeValue.textContent = brushSize;
+            });
+            opacitySlider.addEventListener('input', (e) => {
+                brushOpacity = parseInt(e.target.value) / 100;
+                opacityValue.textContent = e.target.value;
+            });
+
+            // Tool selection
+            document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentTool = btn.dataset.tool;
+                });
+            });
+
+             // Fill toggle
+            fillToggle.addEventListener('click', () => {
+                isFilling = !isFilling;
+                fillToggle.classList.toggle('active', isFilling);
+                 fillToggle.innerHTML = `<i class="fas fa-fill-drip"></i> फिल: ${isFilling ? 'चालू' : 'बंद'}`;
+            });
+
+            // Pattern selection
+            document.querySelectorAll('.tool-btn[data-pattern]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tool-btn[data-pattern]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPattern = btn.dataset.pattern;
+                });
+            });
+
+            // Symmetry selection
+            document.querySelectorAll('.tool-btn[data-symmetry]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tool-btn[data-symmetry]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentSymmetry = btn.dataset.symmetry;
+                });
+            });
+
+            // Color presets
+            document.querySelectorAll('.color-preset').forEach(preset => {
+                preset.addEventListener('click', () => {
+                    brushColor = preset.dataset.color;
+                    colorPicker.value = brushColor;
+                });
+            });
+
+            // Action buttons
+            clearBtn.addEventListener('click', clearCanvas);
+            saveBtn.addEventListener('click', saveImage);
+            undoBtn.addEventListener('click', undo);
+            redoBtn.addEventListener('click', redo);
+
+            // Drawing events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+
+            // Touch events
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', handleTouchEnd);
+             canvas.addEventListener('touchcancel', handleTouchEnd); // Handle cancellation
+        }
+
+        // --- Touch Event Handlers ---
+         function getTouchPos(e) {
+             const rect = canvas.getBoundingClientRect();
+             // Use the first touch point
+             const touch = e.touches[0];
+             return {
+                 x: touch.clientX - rect.left,
+                 y: touch.clientY - rect.top
+             };
+         }
+
+         function handleTouchStart(e) {
+             e.preventDefault(); // Prevent scrolling/zooming
+             const pos = getTouchPos(e);
+             startDrawing({ offsetX: pos.x, offsetY: pos.y });
+         }
+
+         function handleTouchMove(e) {
+             e.preventDefault();
+             if (!isDrawing) return;
+             const pos = getTouchPos(e);
+             draw({ offsetX: pos.x, offsetY: pos.y });
+         }
+
+         function handleTouchEnd(e) {
+             if (isDrawing) {
+                 stopDrawing();
+             }
+         }
+
+        // --- Drawing Logic ---
+        function startDrawing(e) {
+            isDrawing = true;
+            [startX, startY] = [e.offsetX, e.offsetY];
+            [lastX, lastY] = [startX, startY]; // Initialize lastX/Y correctly
+
+             // Save current state for shape preview
+             if (currentTool === 'line' || currentTool === 'rect' || currentTool === 'circle') {
+                 snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+             } else {
+                 snapshot = null; // Not needed for brush/eraser
+             }
+
+            // Apply initial point for brush/eraser if needed
+             if (currentTool === 'brush' || currentTool === 'eraser') {
+                 ctx.beginPath(); // Essential for brush strokes
+                 drawPoint(startX, startY); // Draw the starting point
+             }
+             hue = Math.random() * 360; // Reset hue for rainbow on new stroke
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const currentX = e.offsetX;
+            const currentY = e.offsetY;
+
+            // Restore snapshot for shape preview
+            if (snapshot && (currentTool === 'line' || currentTool === 'rect' || currentTool === 'circle')) {
+                ctx.putImageData(snapshot, 0, 0);
+            }
+
+            // Set common context properties
+            ctx.lineWidth = brushSize;
+            ctx.globalAlpha = brushOpacity; // Use globalAlpha for opacity
+
+            // Tool specific drawing
+            if (currentTool === 'brush') {
+                 drawLineSegment(lastX, lastY, currentX, currentY);
+            } else if (currentTool === 'eraser') {
+                 eraseLineSegment(lastX, lastY, currentX, currentY);
+            } else if (currentTool === 'line') {
+                 drawLineShape(startX, startY, currentX, currentY);
+            } else if (currentTool === 'rect') {
+                 drawRectShape(startX, startY, currentX - startX, currentY - startY);
+            } else if (currentTool === 'circle') {
+                 const radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+                 drawCircleShape(startX, startY, radius);
+            }
+
+            [lastX, lastY] = [currentX, currentY];
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.beginPath(); // Reset the path
+
+             // Draw final shape onto canvas if it was a shape tool
+             if (snapshot && (currentTool === 'line' || currentTool === 'rect' || currentTool === 'circle')) {
+                 ctx.putImageData(snapshot, 0, 0); // Restore original before drawing final shape
+                 if (currentTool === 'line') drawLineShape(startX, startY, lastX, lastY);
+                 else if (currentTool === 'rect') drawRectShape(startX, startY, lastX - startX, lastY - startY);
+                 else if (currentTool === 'circle') {
+                     const radius = Math.sqrt(Math.pow(lastX - startX, 2) + Math.pow(lastY - startY, 2));
+                     drawCircleShape(startX, startY, radius);
+                 }
+             }
+             snapshot = null; // Clear snapshot
+
+            saveState(); // Save state for undo/redo AFTER drawing is complete
+        }
+
+        // --- Drawing Helper Functions ---
+
+         function applyBrushStyles(isEraser = false) {
+             if (isEraser) {
+                 ctx.globalCompositeOperation = 'destination-out'; // Eraser mode
+                 // Eraser doesn't strictly need color, but setting it white can help visualize
+                 ctx.strokeStyle = 'rgba(255,255,255,1)';
+                 ctx.fillStyle = 'rgba(255,255,255,1)';
+                 ctx.shadowBlur = 0; // No shadow for eraser
+             } else {
+                 ctx.globalCompositeOperation = 'source-over'; // Normal drawing mode
+
+                 if (currentPattern === 'rainbow') {
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 1)`; // Opacity handled by globalAlpha
+                     ctx.fillStyle = `hsla(${hue}, 100%, 50%, 1)`;
+                    hue = (hue + 5) % 360; // Increment hue
+                 } else if (currentPattern === 'neon') {
+                    ctx.shadowBlur = brushSize * 0.5 + 5; // Neon glow size based on brush size
+                     ctx.shadowColor = brushColor;
+                     // Draw a white core for neon effect
+                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                 } else { // Normal pattern
+                     ctx.strokeStyle = brushColor;
+                     ctx.fillStyle = brushColor;
+                     ctx.shadowBlur = 0; // Reset shadow
+                 }
+             }
+              ctx.lineWidth = brushSize;
+              ctx.lineCap = 'round';
+              ctx.lineJoin = 'round';
+         }
+
+        // Draws a single point (used by brush/eraser start)
+         function drawPoint(x, y) {
+             const isEraser = currentTool === 'eraser';
+             const points = getSymmetricPoints(x, y);
+
+             points.forEach(p => {
+                 applyBrushStyles(isEraser);
+                 ctx.beginPath();
+                 ctx.arc(p.x, p.y, brushSize / 2, 0, Math.PI * 2);
+                 ctx.fill();
+             });
+         }
+
+        // Draws a line segment (for brush)
+        function drawLineSegment(x1, y1, x2, y2) {
+            const points1 = getSymmetricPoints(x1, y1);
+            const points2 = getSymmetricPoints(x2, y2);
+
+            for (let i = 0; i < points1.length; i++) {
+                applyBrushStyles(false); // Apply brush styles for this segment
+                ctx.beginPath();
+                ctx.moveTo(points1[i].x, points1[i].y);
+                ctx.lineTo(points2[i].x, points2[i].y);
+                ctx.stroke();
+            }
+        }
+
+        // Erases a line segment
+        function eraseLineSegment(x1, y1, x2, y2) {
+             const points1 = getSymmetricPoints(x1, y1);
+             const points2 = getSymmetricPoints(x2, y2);
+
+             for (let i = 0; i < points1.length; i++) {
+                 applyBrushStyles(true); // Set eraser mode
+                 ctx.beginPath();
+                 ctx.moveTo(points1[i].x, points1[i].y);
+                 ctx.lineTo(points2[i].x, points2[i].y);
+                 ctx.stroke();
+             }
+             // Restore normal drawing mode after erasing segment
+              ctx.globalCompositeOperation = 'source-over';
+         }
+
+
+        // Draws a final line shape
+        function drawLineShape(x1, y1, x2, y2) {
+            const points1 = getSymmetricPoints(x1, y1);
+            const points2 = getSymmetricPoints(x2, y2);
+
+            for (let i = 0; i < points1.length; i++) {
+                 applyBrushStyles(false); // Set normal brush style
+                 ctx.beginPath();
+                 ctx.moveTo(points1[i].x, points1[i].y);
+                 ctx.lineTo(points2[i].x, points2[i].y);
+                 ctx.stroke();
+            }
+             ctx.shadowBlur = 0; // Reset shadow if neon was on
+        }
+
+        // Draws a final rectangle shape
+        function drawRectShape(x, y, w, h) {
+            const points = getSymmetricPoints(x, y, x + w, y + h); // Pass corner points
+
+             points.forEach(p => {
+                applyBrushStyles(false);
+                ctx.beginPath();
+                 // Adjust width/height based on symmetry transformations if needed
+                 // For simplicity, we'll draw rect based on transformed top-left 'p'
+                 // This might look strange with radial symmetry, needs refinement for perfect symmetry
+                 const symW = (p.x2 !== undefined) ? Math.abs(p.x2 - p.x) : w;
+                 const symH = (p.y2 !== undefined) ? Math.abs(p.y2 - p.y) : h;
+                 const symX = (p.x2 !== undefined && symW !== w) ? Math.min(p.x, p.x2) : p.x;
+                 const symY = (p.y2 !== undefined && symH !== h) ? Math.min(p.y, p.y2) : p.y;
+
+                 // Correct starting point for negative width/height
+                 const drawX = w < 0 ? symX + symW : symX;
+                 const drawY = h < 0 ? symY + symH : symY;
+
+
+                if (isFilling) {
+                    ctx.fillRect(drawX, drawY, Math.abs(symW), Math.abs(symH));
+                } else {
+                    ctx.strokeRect(drawX, drawY, Math.abs(symW), Math.abs(symH));
+                }
+            });
+             ctx.shadowBlur = 0;
+        }
+
+        // Draws a final circle shape
+        function drawCircleShape(cx, cy, radius) {
+             const points = getSymmetricPoints(cx, cy); // Center points
+
+             points.forEach(p => {
+                 applyBrushStyles(false);
+                 ctx.beginPath();
+                 ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                 if (isFilling) {
+                     ctx.fill();
+                 } else {
+                     ctx.stroke();
+                 }
+            });
+             ctx.shadowBlur = 0;
+        }
+
+
+        // --- Symmetry Logic ---
+        function getSymmetricPoints(x, y, x2_orig, y2_orig) {
+             const points = [{ x, y, x2: x2_orig, y2: y2_orig }]; // Store original corners too if provided
+             const centerX = canvas.width / 2;
+             const centerY = canvas.height / 2;
+
+             // Vertical Symmetry
+             if (currentSymmetry === 'vertical' || currentSymmetry === 'radial4' || currentSymmetry === 'radial6' || currentSymmetry === 'kaleidoscope6') {
+                 const symX = canvas.width - x;
+                 const symX2 = (x2_orig !== undefined) ? canvas.width - x2_orig : undefined;
+                 points.push({ x: symX, y: y, x2: symX2, y2: y2_orig });
+             }
+
+             // Horizontal Symmetry
+             if (currentSymmetry === 'horizontal' || currentSymmetry === 'radial4' || currentSymmetry === 'radial6' || currentSymmetry === 'kaleidoscope6') {
+                 const symY = canvas.height - y;
+                 const symY2 = (y2_orig !== undefined) ? canvas.height - y2_orig : undefined;
+                 points.push({ x: x, y: symY, x2: x2_orig, y2: symY2 });
+             }
+
+             // Diagonal Symmetry (for Radial 4)
+             if (currentSymmetry === 'radial4' || currentSymmetry === 'radial6' || currentSymmetry === 'kaleidoscope6') {
+                 const symX = canvas.width - x;
+                 const symY = canvas.height - y;
+                 const symX2 = (x2_orig !== undefined) ? canvas.width - x2_orig : undefined;
+                 const symY2 = (y2_orig !== undefined) ? canvas.height - y2_orig : undefined;
+                 points.push({ x: symX, y: symY, x2: symX2, y2: symY2 });
+             }
+
+             // Additional rotations for Radial 6 / Kaleidoscope 6 (e.g., 60 degrees)
+             if (currentSymmetry === 'radial6' || currentSymmetry === 'kaleidoscope6') {
+                  const angleIncrement = Math.PI / 3; // 60 degrees for 6 segments
+                  for (let i = 1; i < 3; i++) { // Add points for 60 and 120 degree rotations (others covered by reflection)
+                       const angle = angleIncrement * i;
+                       const cosA = Math.cos(angle);
+                       const sinA = Math.sin(angle);
+
+                       // Rotate original point
+                       const rotated = rotatePoint(x, y, centerX, centerY, cosA, sinA);
+                       const rotated2 = (x2_orig !== undefined) ? rotatePoint(x2_orig, y2_orig, centerX, centerY, cosA, sinA) : {};
+                       points.push({ x: rotated.x, y: rotated.y, x2: rotated2.x, y2: rotated2.y });
+
+                      // Rotate the reflected points as well
+                       // Vertical reflection rotated
+                       const reflectedV = rotatePoint(canvas.width - x, y, centerX, centerY, cosA, sinA);
+                       const reflectedV2 = (x2_orig !== undefined) ? rotatePoint(canvas.width - x2_orig, y2_orig, centerX, centerY, cosA, sinA) : {};
+                       points.push({ x: reflectedV.x, y: reflectedV.y, x2: reflectedV2.x, y2: reflectedV2.y });
+                  }
+             }
+
+            // Remove duplicates (can happen with radial symmetry at center lines)
+            // Simple approach: convert to string and use Set
+            const uniquePoints = Array.from(new Set(points.map(p => JSON.stringify({x:Math.round(p.x), y:Math.round(p.y)}))))
+                                    .map(s => JSON.parse(s));
+            // We need the original complex objects back for shape corners, this simplified approach is only for point drawing
+            // For shape drawing, the symmetry logic needs careful handling within the shape drawing itself.
+             // For now, return all generated points, even if overlapping for shapes.
+            return points;
+        }
+
+         function rotatePoint(px, py, cx, cy, cosA, sinA) {
+            const xRelative = px - cx;
+            const yRelative = py - cy;
+            return {
+                x: cx + xRelative * cosA - yRelative * sinA,
+                y: cy + xRelative * sinA + yRelative * cosA
+            };
+         }
+
+
+        // --- History Management ---
+        function saveState() {
+             // If we undo, then draw something new, discard the redo history
+            if (historyIndex < history.length - 1) {
+                history.splice(historyIndex + 1);
+            }
+
+            // Limit history size
+            if (history.length >= MAX_HISTORY) {
+                history.shift(); // Remove the oldest state
+            }
+
+            // Save current state
+             // Using toDataURL is simpler but potentially slower than getImageData for large canvases
+             // history.push(canvas.toDataURL());
+             // Using getImageData
+             history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            historyIndex = history.length - 1;
+
+            updateUndoRedoButtons();
+        }
+
+        function restoreState(index) {
+            if (index < 0 || index >= history.length) return;
+
+            const stateToRestore = history[index];
+             // If using toDataURL:
+             /*
+             const img = new Image();
+             img.onload = () => {
+                 ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear first
+                 ctx.drawImage(img, 0, 0);
+             };
+             img.src = stateToRestore;
+             */
+             // If using getImageData:
+             ctx.putImageData(stateToRestore, 0, 0);
+
+            historyIndex = index;
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                restoreState(historyIndex - 1);
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                restoreState(historyIndex + 1);
+            }
+        }
+
+        function updateUndoRedoButtons() {
+            undoBtn.disabled = historyIndex <= 0;
+            redoBtn.disabled = historyIndex >= history.length - 1;
+        }
+
+
+        // --- Actions ---
+        function clearCanvas() {
+            if (confirm('क्या आप वाकई कैनवस साफ़ करना चाहते हैं?')) {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                saveState(); // Save the cleared state
+            }
+        }
+
+        function saveImage() {
+            // Create a temporary canvas with white background if needed (transparency issue)
+             const tempSaveCanvas = document.createElement('canvas');
+             tempSaveCanvas.width = canvas.width;
+             tempSaveCanvas.height = canvas.height;
+             const tempSaveCtx = tempSaveCanvas.getContext('2d');
+
+             // Draw white background first
+             tempSaveCtx.fillStyle = 'white';
+             tempSaveCtx.fillRect(0, 0, tempSaveCanvas.width, tempSaveCanvas.height);
+
+             // Draw the current canvas content on top
+             tempSaveCtx.drawImage(canvas, 0, 0);
+
+
+            // Create download link from the temporary canvas
+            const image = tempSaveCanvas.toDataURL('image/png'); // Use PNG for better quality
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = 'मेरी-कलाकृति.png'; // Hindi filename
+            link.click();
+        }
+
+        // --- Start the application ---
+        initialize();
+
+    </script>
+</body>
+</html>
